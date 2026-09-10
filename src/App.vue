@@ -2,62 +2,87 @@
   <div class="container">
     <div class="title-banner">
       <h2>新闻汇总</h2>
-      <p>湖南科技大学茸光焕发团队新闻汇总</p>
     </div>
 
-    <div class="item" v-for="(news, idx) in newsList" :key="idx">
+    <div class="item" v-for="news in list" :key="news.id">
       <strong>{{ news.title }}</strong>
-      <p>报道时间：{{ news.time }}</p>
-      <a :href="news.url" target="_blank">查看原文</a>
+      <p>报道时间：{{ news.createTime }}</p>
+      <a :href="news.URL" target="_blank">查看原文</a>
     </div>
 
     <div class="block">
-    <span class="demonstration">显示总数</span>
-    <el-pagination
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-      :current-page.sync="currentPage1"
-      :page-size="2"
-      layout="total, prev, pager, next"
-      :total="1000">
-    </el-pagination>
-  </div>
+      <span class="demonstration">显示总数</span>
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="page"
+        :page-sizes="[2,4,6]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
+    </div>
   </div>
 </template>
 
 <script>
+// 这一行不能少！！
+import { getEmployeeList } from './api/news.js'
+
 export default {
   name: "App",
   data() {
     return {
-      newsList: [
-        {
-          title: "青春 “三下乡”｜深耕田野治酸化，湖科大青年以科技激活闲置耕地",
-          time: "2026-09-05 18:36:35",
-          url: "https://newxhn.voc.com.cn/portal/news/show/id/33676375.html"
-        },
-        {
-          title: "青春“三下乡”｜科技为耕地 “疗伤”，湖科大青年探索酸化土壤治理新路径",
-          time: "2026-09-05 18:10:21",
-          url: "https://newxhn.voc.com.cn/portal/news/show/id/33677730.html"
-        }
-      ],
+      page: 1,
+      pageSize: 2,
+      total: 0,
+      list: []
+//      newsList: [
+//        {
+//          title: "青春 “三下乡”｜深耕田野治酸化，湖科大青年以科技激活闲置耕地",
+//          time: "2026-09-05 18:36:35",
+//          url: "https://newxhn.voc.com.cn/portal/news/show/id/33676375.html"
+//        },
+//        {
+//          title: "青春“三下乡”｜科技为耕地 “疗伤”，湖科大青年探索酸化土壤治理新路径",
+//          time: "2026-09-05 18:10:21",
+//          url: "https://newxhn.voc.com.cn/portal/news/show/id/33677730.html"
+//       }
+//      ],
       // 和模板 :current-page.sync="currentPage1" 名字必须一模一样！
-      currentPage1: 1, 
       // 如果你是后端分页，一般还要存列表、总条数
       // list:[],
       // total:1000
     }
   },
+  created(){
+    this.pageQuery()
+  },
   methods:{
+    pageQuery() {
+      const params = {page:this.page, pageSize:this.pageSize}
+
+      getEmployeeList(params).then(res =>{
+        if(res.data.code == 1){
+          this.total = res.data.data.total
+          this.list = res.data.data.list
+        }
+      }).catch(err =>{
+        this.$message.error('请求出错了：' + err.message)
+      })
+    },
     // 每页条数改变触发（你当前固定page‑size=10，暂时不会触发）
-    handleSizeChange(val){
-      console.log('每页条数变为：',val)
+    handleSizeChange(pageSize){
+      console.log('每页条数变为：',pageSize)
+      this.pageSize = pageSize
+      this.pageQuery()
       // 在这里重新请求数据
     },
     // 切换页码触发【最重要！点页码就进这个方法】
-    handleCurrentChange(val){
-      console.log('跳转到第',val,'页')
+    handleCurrentChange(page){
+      console.log('跳转到第',page,'页')
+      this.page = page
+      this.pageQuery()
       // val就是新页码，在这里调用接口，获取当前页的数据
       // this.getList()
     },
@@ -116,6 +141,14 @@ export default {
               0 8px 24px rgba(0,0,0,0.08);
   padding:32px 24px;
   margin-bottom:30px; /* ←增大这个数值，卡片上下距离变大，20、30、40自行调整 */
+}
+
+/* ✅ 分页盒子居中 */
+.block{
+  margin-top:20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 a {
